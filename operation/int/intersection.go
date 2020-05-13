@@ -17,6 +17,9 @@ func (i *Intersection) Resolve() []int {
 	if len(i.args) == 0 {
 		return []int{}
 	}
+	if len(i.args) == 1 {
+		return i.args[0].Resolve()
+	}
 
 	var args [][]int
 	var length int
@@ -26,16 +29,18 @@ func (i *Intersection) Resolve() []int {
 		args = append(args, nums)
 	}
 
-	uniqueElements := make([]int, 0, length)
+	uniqueElements := map[int]bool{}
 	for i, arg := range args {
 		if i == 0 {
-			uniqueElements = append(uniqueElements, arg...)
+			for _, a := range arg {
+				uniqueElements[a] = true
+			}
 			continue
 		}
 
 		m := map[int]uniqueElement{}
-		for i, u := range uniqueElements {
-			m[u] = uniqueElement{index: i, unique: true}
+		for k, _ := range uniqueElements {
+			m[k] = uniqueElement{index: i, unique: true}
 		}
 		for _, a := range arg {
 			_, contains := m[a]
@@ -46,15 +51,18 @@ func (i *Intersection) Resolve() []int {
 			m[a] = uniqueElement{index: i, unique: false}
 		}
 
-		newUniqueElements := make([]int, 0, length)
 		for k, v := range m {
-			if !v.unique {
-				newUniqueElements = append(newUniqueElements, k)
+			if v.unique {
+				delete(uniqueElements, k)
 			}
 		}
-		uniqueElements = newUniqueElements
 	}
-	return uniqueElements
+
+	res := make([]int, 0, len(uniqueElements))
+	for k, _ := range uniqueElements {
+		res = append(res, k)
+	}
+	return res
 }
 
 func New(args []operation.Resolvable) *Intersection {
