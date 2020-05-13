@@ -19,7 +19,7 @@ func TestUnions(t *testing.T) {
 	empty := unary.New(nil)
 	testCases := []testCase{
 		{name: "nil", args: nil, want: []int{}},
-		{name: "[]", args: []operation.Resolvable{unary.New(nil)}, want: []int{}},
+		{name: "[]", args: []operation.Resolvable{empty}, want: []int{}},
 		{name: "[1, 2, 3]", args: []operation.Resolvable{unary.New([]int{1, 2, 3})}, want: []int{1, 2, 3}},
 		{name: "[1, 2, 3]U[]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), empty}, want: []int{1, 2, 3}},
 		{name: "[]U[1, 2, 3]", args: []operation.Resolvable{empty, unary.New([]int{1, 2, 3})}, want: []int{1, 2, 3}},
