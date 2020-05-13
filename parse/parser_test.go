@@ -17,7 +17,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestComplexParse(t *testing.T) {
-	n := Parse("[ SUM [ DIF a.txt b.txt ] [ INT b.txt c.txt ] ]")
+	n := Parse("[ SUM [ DIF a.txt b.txt c.txt ] [ INT b.txt c.txt ] ]")
 	assert.Equal(t, "SUM", n.operation)
 	require.Len(t, n.children, 2)
 
