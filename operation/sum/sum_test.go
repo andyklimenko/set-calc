@@ -1,6 +1,7 @@
 package sum
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/andyklimenko/set-calc/operation"
@@ -29,7 +30,9 @@ func TestUnions(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			op := New(tc.args)
-			assert.Equal(t, tc.want, op.Resolve())
+			got := op.Resolve()
+			sort.Ints(got)
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }

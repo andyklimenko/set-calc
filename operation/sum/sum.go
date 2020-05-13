@@ -13,31 +13,17 @@ func (u *Union) Resolve() []int {
 		return []int{}
 	}
 
-	var args [][]int
-	var length int
+	m := map[int]bool{}
 	for _, arg := range u.args {
 		nums := arg.Resolve()
-		length += len(nums)
-		args = append(args, nums)
+		for _, n := range nums {
+			m[n] = true
+		}
 	}
 
-	uniqueElements := make([]int, 0, length)
-	for i, arg := range args {
-		if i == 0 {
-			uniqueElements = append(uniqueElements, arg...)
-			continue
-		}
-
-		m := map[int]bool{}
-		for _, u := range uniqueElements {
-			m[u] = true
-		}
-		for _, a := range arg {
-			_, contains := m[a]
-			if !contains {
-				uniqueElements = append(uniqueElements, a)
-			}
-		}
+	uniqueElements := make([]int, 0, len(m))
+	for k, _ := range m {
+		uniqueElements = append(uniqueElements, k)
 	}
 
 	return uniqueElements
