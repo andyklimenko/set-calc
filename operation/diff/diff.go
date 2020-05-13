@@ -1,30 +1,34 @@
-package int
+package diff
 
 import (
 	"github.com/andyklimenko/set-calc/operation"
 )
 
-type Intersection struct {
+type XOR struct {
 	args []operation.Resolvable
 }
 
-func (i *Intersection) Resolve() []int {
-	if len(i.args) == 0 {
+func (x *XOR) Resolve() []int {
+	if len(x.args) == 0 {
 		return []int{}
 	}
-	if len(i.args) == 1 {
-		return i.args[0].Resolve()
+
+	if len(x.args) == 1 {
+		return x.args[0].Resolve()
 	}
 
 	var args [][]int
-	for _, arg := range i.args {
+	for _, arg := range x.args {
 		nums := arg.Resolve()
 		args = append(args, nums)
 	}
 
 	uniqueElements := map[int]bool{}
-	for i, arg := range args {
-		if i == 0 {
+	for _, arg := range args {
+		if len(arg) == 0 {
+			continue
+		}
+		if len(uniqueElements) == 0 {
 			for _, a := range arg {
 				uniqueElements[a] = true
 			}
@@ -37,17 +41,12 @@ func (i *Intersection) Resolve() []int {
 		}
 		for _, a := range arg {
 			_, contains := m[a]
-			if !contains {
+			if contains {
+				delete(uniqueElements, a)
 				continue
 			}
 
-			m[a] = false
-		}
-
-		for k, v := range m {
-			if v {
-				delete(uniqueElements, k)
-			}
+			uniqueElements[a] = true
 		}
 	}
 
@@ -58,6 +57,6 @@ func (i *Intersection) Resolve() []int {
 	return res
 }
 
-func New(args []operation.Resolvable) *Intersection {
-	return &Intersection{args: args}
+func New(args []operation.Resolvable) *XOR {
+	return &XOR{args: args}
 }
