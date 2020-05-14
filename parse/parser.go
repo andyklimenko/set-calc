@@ -12,6 +12,8 @@ const (
 
 var (
 	ErrInvalidStringFormat = errors.New("invalid string format")
+	ErrNoOpeningBrace      = errors.New("can't find opening brace but closing brace was found")
+	ErrNoClosingBrace      = errors.New("can't find closing brace but opening brace was found")
 )
 
 type Node struct {
@@ -27,12 +29,18 @@ func omitBraces(s string) (string, error) {
 
 	startIdx := strings.Index(s, "[")
 	endIdx := strings.LastIndex(s, "]")
-	if startIdx > endIdx {
-		return "", ErrInvalidStringFormat
-	}
 
 	if startIdx == -1 && endIdx == -1 {
 		return s, nil
+	}
+	if startIdx == -1 && endIdx != -1 {
+		return "", ErrNoOpeningBrace
+	}
+	if startIdx != -1 && endIdx == -1 {
+		return "", ErrNoClosingBrace
+	}
+	if startIdx > endIdx {
+		return "", ErrInvalidStringFormat
 	}
 
 	s = s[startIdx+1 : endIdx]

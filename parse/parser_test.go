@@ -43,6 +43,8 @@ func TestOmitBraces(t *testing.T) {
 	testCases := []testCase{
 		{name: "empty line", str: "", expectedResult: ""},
 		{name: "invalid format", str: "]invalid format[", expectedError: ErrInvalidStringFormat},
+		{name: "missing opening brace", str: "no opening brace]", expectedError: ErrNoOpeningBrace},
+		{name: "missing closing brace", str: "[no closing brace", expectedError: ErrNoClosingBrace},
 		{name: "no braces", str: "no braces", expectedResult: "no braces"},
 		{name: "space at start", str: "[ space at start]", expectedResult: "space at start"},
 		{name: "space at the end", str: "[space at the end ]", expectedResult: "space at the end"},
@@ -57,6 +59,7 @@ func TestOmitBraces(t *testing.T) {
 				return
 			}
 
+			require.NoError(t, err)
 			assert.Equal(t, tc.expectedResult, s)
 		})
 	}
