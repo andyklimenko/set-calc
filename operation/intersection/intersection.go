@@ -1,4 +1,4 @@
-package int
+package intersection
 
 import (
 	"github.com/andyklimenko/set-calc/operation"

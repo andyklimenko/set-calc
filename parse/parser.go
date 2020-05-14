@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-)
 
-const (
-	OperationUnary = "unary"
+	"github.com/andyklimenko/set-calc/load/fs"
+	"github.com/andyklimenko/set-calc/operation"
+	"github.com/andyklimenko/set-calc/operation/unary"
 )
 
 var (
@@ -15,12 +15,6 @@ var (
 	ErrNoOpeningBrace      = errors.New("can't find opening brace but closing brace was found")
 	ErrNoClosingBrace      = errors.New("can't find closing brace but opening brace was found")
 )
-
-type Node struct {
-	operation string
-	files     []string
-	children  []*Node
-}
 
 func omitBraces(s string) (string, error) {
 	if s == "" {
@@ -115,7 +109,17 @@ func splitSubExpressions(s string) []string {
 	return res
 }
 
-func Parse(str string) (*Node, error) {
+func newUnary(fileName string) (*unary.Unary, error) {
+	l := fs.New(fileName)
+	nums, err := l.Load()
+	if err != nil {
+		return nil, fmt.Errorf("loading numbers from %s: %w", fileName, err)
+	}
+
+	return unary.New(nums), nil
+}
+
+func Parse(str string) (operation.Resolvable, error) {
 	if str == "" {
 		return nil, nil
 	}
@@ -126,10 +130,7 @@ func Parse(str string) (*Node, error) {
 	}
 
 	if strings.Index(s, " ") == -1 {
-		return &Node{ // no spaces -> no operation marker -> unary operation
-			operation: OperationUnary,
-			files:     []string{s},
-		}, nil
+		return newUnary(s) // no spaces -> no operation marker -> unary operation
 	}
 
 	var op []byte
@@ -145,18 +146,23 @@ func Parse(str string) (*Node, error) {
 		}
 	}
 
-	n := Node{
-		operation: string(op),
+	if !supportOperation(string(op)) {
+		return nil, ErrOperationNotSupported
 	}
+
 	args := s[opLastIdx+1:]
 	parsedArgs := splitSubExpressions(args)
+	operationArgs := make([]operation.Resolvable, 0, len(parsedArgs))
 	for _, parsedArg := range parsedArgs {
-		if parsedArg == "" {
-			continue
-		}
-
 		if strings.Index(parsedArg, "[") == -1 {
-			n.files = strings.Split(parsedArg, " ")
+			files := strings.Split(parsedArg, " ")
+			for _, f := range files {
+				a, err := newUnary(f)
+				if err != nil {
+					return nil, err
+				}
+				operationArgs = append(operationArgs, a)
+			}
 			continue
 		}
 
@@ -164,8 +170,8 @@ func Parse(str string) (*Node, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w", err)
 		}
-		n.children = append(n.children, child)
+		operationArgs = append(operationArgs, child)
 	}
 
-	return &n, nil
+	return newOperation(string(op), operationArgs...), nil
 }

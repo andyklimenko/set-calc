@@ -1,34 +1,82 @@
 package parse
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseSimpleExp(t *testing.T) {
+func setupFile(nums ...string) (string, error) {
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		return "", err
+	}
+
+	for _, n := range nums {
+		if _, err := f.WriteString(fmt.Sprintf("%s\n", n)); err != nil {
+			return "", err
+		}
+	}
+
+	return f.Name(), f.Sync()
+}
+
+func TestParseEmpty(t *testing.T) {
+	t.Parallel()
 	n, err := Parse("")
 	require.NoError(t, err)
 	assert.Nil(t, n)
+}
 
-	root, err := Parse("[DIF a.txt b.txt c.txt]")
+func TestParseSimpleExp(t *testing.T) {
+	t.Parallel()
+	a, err := setupFile("1", "2", "3")
 	require.NoError(t, err)
-	assert.Equal(t, "DIF", root.operation)
-	assert.Equal(t, []string{"a.txt", "b.txt", "c.txt"}, root.files)
-	assert.Nil(t, root.children)
+	defer os.Remove(a)
+
+	b, err := setupFile("2", "3", "4")
+	require.NoError(t, err)
+	defer os.Remove(b)
+
+	c, err := setupFile("3", "4", "5")
+	require.NoError(t, err)
+	defer os.Remove(c)
+
+	rootExpr, err := Parse(fmt.Sprintf("[DIF %s %s %s]", a, b, c))
+	require.NoError(t, err)
+
+	res := rootExpr.Resolve()
+	sort.Ints(res)
+	assert.Equal(t, []int{1, 3, 5}, res)
 }
 
 func TestParseComplexExpr(t *testing.T) {
-	root, err := Parse("[ SUM [ DIF a.txt b.txt c.txt ] [ INT b.txt c.txt ] ]")
+	t.Parallel()
+	a, err := setupFile("1", "2", "3")
 	require.NoError(t, err)
-	assert.Equal(t, "SUM", root.operation)
-	require.Len(t, root.children, 2)
+	defer os.Remove(a)
 
-	assert.Equal(t, "DIF", root.children[0].operation)
-	assert.Equal(t, []string{"a.txt", "b.txt", "c.txt"}, root.children[0].files)
-	assert.Equal(t, "INT", root.children[1].operation)
-	assert.Equal(t, []string{"b.txt", "c.txt"}, root.children[1].files)
+	b, err := setupFile("2", "3", "4")
+	require.NoError(t, err)
+	defer os.Remove(b)
+
+	c, err := setupFile("3", "4", "5")
+	require.NoError(t, err)
+	defer os.Remove(c)
+
+	line := fmt.Sprintf("[ SUM [ DIF %s %s %s ] [ INT %s %s ] ]", a, b, c, b, c)
+	rootExpr, err := Parse(line)
+	require.NoError(t, err)
+
+	res := rootExpr.Resolve()
+	sort.Ints(res)
+
+	assert.Equal(t, []int{1, 3, 4, 5}, res)
 }
 
 func TestOmitBraces(t *testing.T) {
@@ -66,6 +114,7 @@ func TestOmitBraces(t *testing.T) {
 }
 
 func TestSplit(t *testing.T) {
+	t.Parallel()
 	s := splitSubExpressions("[ab[c]][[c]d]")
 	require.Len(t, s, 2)
 	assert.Equal(t, []string{"[ab[c]]", "[[c]d]"}, s)
@@ -80,15 +129,34 @@ func TestSplit(t *testing.T) {
 }
 
 func TestParseNestedExpr(t *testing.T) {
-	root, err := Parse("[ SUM [ DIF a.txt [ SUM b.txt c.txt ] ] [ INT d.txt e.txt ] ]")
+	t.Parallel()
+	a, err := setupFile("1", "2", "3")
+	require.NoError(t, err)
+	defer os.Remove(a)
+
+	b, err := setupFile("2", "3", "4")
+	require.NoError(t, err)
+	defer os.Remove(b)
+
+	c, err := setupFile("3", "4", "5")
+	require.NoError(t, err)
+	defer os.Remove(c)
+
+	d, err := setupFile("4", "5", "6")
+	require.NoError(t, err)
+	defer os.Remove(b)
+
+	e, err := setupFile("5", "6", "7")
+	require.NoError(t, err)
+	defer os.Remove(c)
+
+	line := fmt.Sprintf("[ SUM [ DIF %s [ SUM %s %s ] ] [ INT %s %s ] ]", a, b, c, d, e)
+	rootExpr, err := Parse(line)
 	assert.NoError(t, err)
-	assert.Equal(t, "SUM", root.operation)
-	require.Len(t, root.children, 2)
-	require.Equal(t, "DIF", root.children[0].operation)
-	require.Len(t, root.children[0].children, 1)
 
-	require.Equal(t, []string{"a.txt"}, root.children[0].files)
+	res := rootExpr.Resolve()
+	sort.Ints(res)
 
-	require.Equal(t, "INT", root.children[1].operation)
-	require.Equal(t, []string{"d.txt", "e.txt"}, root.children[1].files)
+	assert.Equal(t, []int{1, 4, 5, 6}, res)
+
 }
