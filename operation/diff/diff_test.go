@@ -24,8 +24,8 @@ func TestDiff(t *testing.T) {
 		{name: "[1, 2, 3]", args: []operation.Resolvable{unary.New([]int{1, 2, 3})}, want: []int{1, 2, 3}},
 		{name: "[1, 2, 3]DIFF[]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), empty}, want: []int{1, 2, 3}},
 		{name: "[]DIFF[1, 2, 3]", args: []operation.Resolvable{empty, unary.New([]int{1, 2, 3})}, want: []int{1, 2, 3}},
-		{name: "[1, 2, 3]INT[4, 5, 6]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), unary.New([]int{4, 5, 6})}, want: []int{1, 2, 3, 4, 5, 6}},
-		{name: "[1, 2, 3]INT[2, 3, 4]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), unary.New([]int{2, 3, 4})}, want: []int{1, 4}},
+		{name: "[1, 2, 3]DIFF[4, 5, 6]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), unary.New([]int{4, 5, 6})}, want: []int{1, 2, 3, 4, 5, 6}},
+		{name: "[1, 2, 3]DIFF[2, 3, 4]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), unary.New([]int{2, 3, 4})}, want: []int{1, 4}},
 	}
 
 	for _, tc := range testCases {

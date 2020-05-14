@@ -22,10 +22,10 @@ func TestUnions(t *testing.T) {
 		{name: "nil", args: nil, want: []int{}},
 		{name: "[]", args: []operation.Resolvable{empty}, want: []int{}},
 		{name: "[1, 2, 3]", args: []operation.Resolvable{unary.New([]int{1, 2, 3})}, want: []int{1, 2, 3}},
-		{name: "[1, 2, 3]U[]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), empty}, want: []int{1, 2, 3}},
-		{name: "[]U[1, 2, 3]", args: []operation.Resolvable{empty, unary.New([]int{1, 2, 3})}, want: []int{1, 2, 3}},
-		{name: "[1, 2, 3]U[4, 5, 6]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), unary.New([]int{4, 5, 6})}, want: []int{1, 2, 3, 4, 5, 6}},
-		{name: "[1, 2, 3]U[2, 3, 4]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), unary.New([]int{2, 3, 4})}, want: []int{1, 2, 3, 4}},
+		{name: "[1, 2, 3]SUM[]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), empty}, want: []int{1, 2, 3}},
+		{name: "[]SUM[1, 2, 3]", args: []operation.Resolvable{empty, unary.New([]int{1, 2, 3})}, want: []int{1, 2, 3}},
+		{name: "[1, 2, 3]SUM[4, 5, 6]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), unary.New([]int{4, 5, 6})}, want: []int{1, 2, 3, 4, 5, 6}},
+		{name: "[1, 2, 3]SUM[2, 3, 4]", args: []operation.Resolvable{unary.New([]int{1, 2, 3}), unary.New([]int{2, 3, 4})}, want: []int{1, 2, 3, 4}},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
