@@ -1,6 +1,18 @@
 package parse
 
-import "strings"
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
+
+const (
+	OperationUnary = "unary"
+)
+
+var (
+	ErrInvalidStringFormat = errors.New("invalid string format")
+)
 
 type Node struct {
 	operation string
@@ -8,15 +20,109 @@ type Node struct {
 	children  []*Node
 }
 
-func Parse(s string) *Node {
+func omitBraces(s string) (string, error) {
 	if s == "" {
-		return nil
-	}
-	if s[0] != '[' && s[len(s)-1] != ']' {
-		return nil
+		return "", nil
 	}
 
-	s = s[1 : len(s)-1]
+	startIdx := strings.Index(s, "[")
+	endIdx := strings.LastIndex(s, "]")
+	if startIdx > endIdx {
+		return "", ErrInvalidStringFormat
+	}
+
+	if startIdx == -1 && endIdx == -1 {
+		return s, nil
+	}
+
+	s = s[startIdx+1 : endIdx]
+
+	for i, c := range s {
+		startIdx = i
+		if c == ' ' {
+			continue
+		}
+
+		break
+	}
+
+	for i := len(s) - 1; i >= 0; i-- {
+		endIdx = i
+		if s[i] == ' ' {
+			continue
+		}
+
+		break
+	}
+
+	return s[startIdx : endIdx+1], nil
+}
+
+func splitSubExpressions(s string) []string {
+	var res []string
+	unprocessed := s
+
+	var globalEndIndex int
+	for unprocessed != "]" && unprocessed != "" {
+		var beginIndicators, endIndicators int
+		var beginIndex, endIndex int
+		for i, c := range unprocessed {
+			if c == '[' {
+				if beginIndicators == 0 {
+					beginIndex = i
+				}
+
+				if beginIndex > 0 {
+					endIndex = beginIndex - 1
+					for i := endIndex; i > 0; i-- {
+						if unprocessed[i] == ' ' {
+							endIndex--
+						}
+					}
+					globalEndIndex += endIndex
+					beginIndex = 0
+					break
+				}
+
+				beginIndicators++
+			}
+			if c == ']' {
+				endIndicators++
+				if endIndicators == beginIndicators {
+					endIndex = i
+					globalEndIndex += i
+					break
+				}
+			}
+		}
+
+		if beginIndex == 0 && endIndex == 0 {
+			res = append(res, unprocessed)
+			unprocessed = ""
+			continue
+		}
+		res = append(res, unprocessed[beginIndex:endIndex+1])
+		unprocessed = s[globalEndIndex+1:]
+	}
+	return res
+}
+
+func Parse(str string) (*Node, error) {
+	if str == "" {
+		return nil, nil
+	}
+
+	s, err := omitBraces(str)
+	if err != nil {
+		return nil, err
+	}
+
+	if strings.Index(s, " ") == -1 {
+		return &Node{ // no spaces -> no operation marker -> unary operation
+			operation: OperationUnary,
+			files:     []string{s},
+		}, nil
+	}
 
 	var op []byte
 	var opLastIdx int
@@ -35,30 +141,23 @@ func Parse(s string) *Node {
 		operation: string(op),
 	}
 	args := s[opLastIdx+1:]
-	subArgsStringsToParse := strings.Split(args, "[ ")
-	if len(subArgsStringsToParse) == 1 {
-		files := strings.Split(args, " ")
-		for _, f := range files {
-			if f != "" {
-				n.files = append(n.files, f)
-			}
+	parsedArgs := splitSubExpressions(args)
+	for _, parsedArg := range parsedArgs {
+		if parsedArg == "" {
+			continue
 		}
+
+		if strings.Index(parsedArg, "[") == -1 {
+			n.files = strings.Split(parsedArg, " ")
+			continue
+		}
+
+		child, err := Parse(parsedArg)
+		if err != nil {
+			return nil, fmt.Errorf("%w", err)
+		}
+		n.children = append(n.children, child)
 	}
 
-	if len(subArgsStringsToParse) > 1 {
-		n.children = make([]*Node, 0, len(subArgsStringsToParse))
-		for _, s := range subArgsStringsToParse {
-			if s == "" {
-				continue
-			}
-
-			if s[len(s)-1] == ' ' {
-				s = s[:len(s)-1]
-			}
-			child := Parse("[" + s)
-			n.children = append(n.children, child)
-		}
-	}
-
-	return &n
+	return &n, nil
 }
