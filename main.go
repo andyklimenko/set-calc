@@ -14,7 +14,7 @@ func main() {
 
 	var expr string
 	for _, a := range args {
-		expr += a
+		expr += " " + a
 	}
 	if expr == "" {
 		fmt.Println("can't parse empty expression")

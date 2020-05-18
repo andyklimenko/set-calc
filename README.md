@@ -15,6 +15,6 @@ Where expression can be:
 * combination of previous two points
 
 Examples:
-* `$ ./set-calc [DIF a.txt b.txt c.txt]`
+* `$ ./set-calc [ DIF a.txt b.txt c.txt ]`
 * `$ ./set-calc [ SUM [ DIF a.txt b.txt c.txt ] [ INT b.txt c.txt ] ]`
-* `$ ./set-calc  SUM [ DIF a.txt [ SUM b.txt c.txt ] ] [ INT d.txt e.txt ] ]`
+* `$ ./set-calc [ SUM [ DIF a.txt [ SUM b.txt c.txt ] ] [ INT a.txt b.txt ] ]`
